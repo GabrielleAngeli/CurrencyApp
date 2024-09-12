@@ -17,6 +17,6 @@ data class MetaData(
 
 @Serializable
 data class Currency (
-    val codec: String,
+    val code: String,
     val value: Double
 )

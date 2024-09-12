@@ -13,6 +13,7 @@ import org.example.currencyapp.domain.CurrencyApiService
 import org.example.currencyapp.domain.PreferencesRepository
 import org.example.currencyapp.domain.model.ApiResponse
 import org.example.currencyapp.domain.model.Currency
+import org.example.currencyapp.domain.model.CurrencyCode
 import org.example.currencyapp.domain.model.RequestState
 
 class CurrencyApiServiceImpl(
@@ -49,14 +50,27 @@ class CurrencyApiServiceImpl(
         return try {
             val response = httpClient.get(ENDPOINT)
             if(response.status.value == 200) {
-                println("API RESPoNSE: ${response.body<String>()}")
                 val apiResponse = Json.decodeFromString<ApiResponse>(response.body())
 
+                val availableCurrencyCodes = apiResponse.data.keys
+                    .filter {
+                        CurrencyCode.entries
+                            .map {
+                                code -> code.name
+                            }
+                            .toSet()
+                            .contains(it)
+                    }
+
+                val availableCurrencies = apiResponse.data.values
+                    .filter { currency ->
+                        availableCurrencyCodes.contains(currency.code)
+                    }
                 //Persist a timestamp
                 val lastUpdated = apiResponse.meta.lastUpdatedAt
                 preferences.saveLastUpdated(lastUpdated)
 
-                RequestState.Success(data = apiResponse.data.values.toList())
+                RequestState.Success(data = availableCurrencies)
             } else {
                 RequestState.Error(message = "Http Error Code: ${response.status}")
             }
