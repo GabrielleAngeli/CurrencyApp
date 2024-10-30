@@ -5,8 +5,13 @@ import com.russhwolf.settings.Settings
 import com.russhwolf.settings.coroutines.FlowSettings
 import com.russhwolf.settings.coroutines.toFlowSettings
 import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
 import org.example.currencyapp.domain.PreferencesRepository
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 class PreferencesImpl(private val settings: Settings): PreferencesRepository {
 
@@ -24,22 +29,30 @@ class PreferencesImpl(private val settings: Settings): PreferencesRepository {
     }
 
     override suspend fun isDataFresh(currentTimestamp: Long): Boolean {
-        val savedTimestamp =  flowSettings.getLong(
+        val savedTimestamp = flowSettings.getLong(
             key = TIMESTAMP_KEY,
-           defaultValue = 0L
+            defaultValue = 0L
         )
 
-        return if(savedTimestamp != 0L) {
+        return if (savedTimestamp != 0L) {
             val currentInstant = Instant.fromEpochMilliseconds(currentTimestamp)
             val savedInstant = Instant.fromEpochMilliseconds(savedTimestamp)
 
-            val currentDataTime = currentInstant.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
-            val savedDataTime = savedInstant.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+            // Converter os Instantes para LocalDateTimes, no fuso horário local
+            val currentDateTime = currentInstant.toLocalDateTime(TimeZone.currentSystemDefault())
+            val savedDateTime = savedInstant.toLocalDateTime(TimeZone.currentSystemDefault())
 
-            val daysDifference = currentDataTime.date.dayOfYear - savedDataTime.date.dayOfYear
+            // Calcular a diferença de dias entre as duas datas
+            val daysDifference = currentDateTime.date.daysUntil(savedDateTime.date)
 
+            println("Is data fresh??? --------------")
+            println("daysDifference ------- $daysDifference")
+            println("currentTimestamp ----- $currentTimestamp")
+            println("currentDateTime.date.dayOfYear ----- ${currentDateTime.date.dayOfYear}")
+            println("savedDateTime.date.dayOfYear ----- ${savedDateTime.date.dayOfYear}")
+
+            // Retorna verdadeiro se a diferença for menor que 1 dia
             daysDifference < 1
-
         } else false
     }
 }

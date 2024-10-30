@@ -49,15 +49,13 @@ class CurrencyApiServiceImpl(
     override suspend fun getLatestExchangeRates(): RequestState<List<Currency>> {
         return try {
             val response = httpClient.get(ENDPOINT)
-            if(response.status.value == 200) {
+            if (response.status.value == 200) {
                 val apiResponse = Json.decodeFromString<ApiResponse>(response.body())
 
                 val availableCurrencyCodes = apiResponse.data.keys
                     .filter {
                         CurrencyCode.entries
-                            .map {
-                                code -> code.name
-                            }
+                            .map { code -> code.name }
                             .toSet()
                             .contains(it)
                     }
@@ -66,13 +64,14 @@ class CurrencyApiServiceImpl(
                     .filter { currency ->
                         availableCurrencyCodes.contains(currency.code)
                     }
-                //Persist a timestamp
+
+                // Persist a timestamp
                 val lastUpdated = apiResponse.meta.lastUpdatedAt
                 preferences.saveLastUpdated(lastUpdated)
 
                 RequestState.Success(data = availableCurrencies)
             } else {
-                RequestState.Error(message = "Http Error Code: ${response.status}")
+                RequestState.Error(message = "HTTP Error Code: ${response.status}")
             }
         } catch (e: Exception) {
             RequestState.Error(message = e.message.toString())

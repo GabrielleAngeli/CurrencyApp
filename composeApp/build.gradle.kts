@@ -107,4 +107,7 @@ android {
         debugImplementation(compose.uiTooling)
     }
 }
+dependencies {
+    implementation(libs.firebase.crashlytics.buildtools)
+}
 
